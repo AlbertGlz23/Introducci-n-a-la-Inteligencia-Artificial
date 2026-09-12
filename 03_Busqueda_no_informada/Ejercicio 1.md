@@ -9,14 +9,14 @@
 ### Oradea
 Es una ciudad ubicada en la región noroeste de Rumanía, cerca de la frontera con Hungría. En el mapa del problema de búsqueda no informada de IA, funciona como un punto de entrada estratégico en el extremo superior oeste de la red de carreteras, conectando directamente con nodos como **Zerind** (71 km) y **Sibiu** (151 km).
 
-![Oradea en el mapa de Rumanía](https://upload.wikimedia.org/wikipedia/commons/ thumb/7/70/Romania_location_map.svg/800px-Romania_location_map.svg.png)
+![Oradea en el mapa de Rumanía](./assets/oradea.png)
 
 ---
 
 ### Mehadia
 Es una localidad situada en el suroeste de Rumanía, dentro de la región histórica del Bánato. En el grafo de carreteras, se posiciona en el corredor suroeste que bordea la frontera, sirviendo como enlace directo entre **Lugoj** (70 km) y **Drobeta** (75 km).
 
-![Mehadia en el mapa de Rumanía](https://upload.wikimedia.org/wikipedia/commons/ thumb/7/70/Romania_location_map.svg/800px-Romania_location_map.svg.png)
+![Mehadia en el mapa de Rumanía](./assets/mehadia.png)
 
 ---
 
@@ -38,6 +38,7 @@ graph LR
     style Arad fill:#4a5568,stroke:#2d3748,color:#fff
     style Timisoara fill:#4a5568,stroke:#2d3748,color:#fff
     style Lugoj fill:#4a5568,stroke:#2d3748,color:#fffç
+```
 
 ## Sección II. Resultados y Análisis de Algoritmos
 
