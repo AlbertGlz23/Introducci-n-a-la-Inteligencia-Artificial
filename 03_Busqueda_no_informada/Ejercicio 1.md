@@ -37,7 +37,7 @@ graph LR
     style Zerind fill:#4a5568,stroke:#2d3748,color:#fff
     style Arad fill:#4a5568,stroke:#2d3748,color:#fff
     style Timisoara fill:#4a5568,stroke:#2d3748,color:#fff
-    style Lugoj fill:#4a5568,stroke:#2d3748,color:#fffç
+    style Lugoj fill:#4a5568,stroke:#2d3748,color:#fff
 ```
 
 ## Sección II. Resultados y Análisis de Algoritmos
