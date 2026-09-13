@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mexico · 1,000-city proximity graph</title>
+  <style>
+    :root {
+      --bg: #f4efe6;
+      --ink: #1c1916;
+      --muted: #6b6258;
+      --line: #c4b8a8;
+      --panel: #fffaf2;
+      --edge: #8a7d6b;
+      --land: #e7dccb;
+      --coast: #5c5348;
+      --node: #9a3412;
+      --node-hi: #c2410c;
+      --accent: #1f4d3a;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); }
+    body {
+      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      display: grid;
+      grid-template-columns: minmax(260px, 320px) 1fr;
+      min-height: 100%;
+    }
+    aside {
+      padding: 28px 22px 24px;
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-height: 100vh;
+    }
+    h1 {
+      font-size: 26px;
+      line-height: 1.15;
+      font-weight: 600;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+    .lede { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      background: var(--bg);
+    }
+    .stat b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+    .stat span { color: var(--muted); font-size: 12px; }
+    label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
+    input[type="search"], select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      padding: 8px 10px;
+      font: 14px ui-sans-serif, "Helvetica Neue", sans-serif;
+    }
+    .row { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
+    .row input { accent-color: var(--accent); }
+    .city {
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+      min-height: 92px;
+    }
+    .city h2 { margin: 0 0 4px; font-size: 18px; }
+    .city p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
+    .legend { font-size: 12px; color: var(--muted); line-height: 1.45; }
+    .swatch { display: inline-block; width: 8px; height: 8px; background: var(--node); border-radius: 50%; margin-right: 6px; }
+    main { position: relative; overflow: hidden; }
+    svg { width: 100%; height: 100vh; display: block; cursor: grab; }
+    svg.dragging { cursor: grabbing; }
+    text.lbl {
+      font: 600 11px ui-sans-serif, "Helvetica Neue", sans-serif;
+      fill: var(--ink);
+      paint-order: stroke;
+      stroke: var(--bg);
+      stroke-width: 3px;
+      pointer-events: none;
+    }
+    text.lbl-route {
+      font: 700 13px ui-sans-serif, "Helvetica Neue", sans-serif;
+      fill: var(--accent);
+      paint-order: stroke;
+      stroke: var(--bg);
+      stroke-width: 3px;
+      pointer-events: none;
+    }
+    footer.source {
+      margin-top: auto;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    @media (max-width: 800px) {
+      body { grid-template-columns: 1fr; }
+      aside { min-height: auto; }
+      svg { height: 70vh; }
+    }
+    .route-block { border-top: 1px solid var(--line); padding-top: 14px; }
+    .rf-btn {
+      margin-top: 8px;
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      background: var(--accent);
+      color: #fff;
+      font: 600 13px ui-sans-serif, "Helvetica Neue", sans-serif;
+      cursor: pointer;
+    }
+    .rf-btn:hover { opacity: 0.92; }
+    .rf-btn-secondary { background: #fff; color: var(--ink); }
+    
+    #routeResult {
+      margin-top: 10px;
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .route-cost {
+      display: block;
+      margin-top: 6px;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    #routeResult.error { color: #9a3412; }
+  </style>
+</head>
+<body>
+  <aside>
+    <div>
+      <h1>Mexico as a graph</h1>
+      <p class="lede">1,000 cities, pinned to real coordinates and linked to their nearest neighbors.</p>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div>
+      <label for="q">Find a city</label>
+      <input id="q" type="search" placeholder="e.g. Oaxaca, Tijuana…" autocomplete="off" />
+    </div>
+    <div>
+      <label for="state">State</label>
+      <select id="state"><option value="">All states</option></select>
+    </div>
+    <div class="route-block">
+      <h2 style="font-size:15px;margin:4px 0 10px;">Find a route (A*)</h2>
+      <label for="origin">Origin</label>
+      <select id="origin"></select>
+      <label for="destination" style="margin-top:8px;">Destination</label>
+      <select id="destination"></select>
+      <button id="findRouteBtn" type="button" class="rf-btn">Find route</button>
+      <button id="clearRouteBtn" type="button" class="rf-btn rf-btn-secondary" style="display:none;">Clear route</button>
+      <div id="routeResult"></div>
+    </div>
+    <div class="row">
+      <input id="labels" type="checkbox" checked />
+      <label for="labels" style="margin:0">Label the largest cities</label>
+    </div>
+    <div class="city" id="detail">
+      <h2>Hover a node</h2>
+      <p>Circle size is log population. Edges are 4-nearest neighbors plus a few MST bridges so remote towns stay connected.</p>
+    </div>
+    <p class="legend"><span class="swatch"></span>Node = city · line = proximity edge<br>Layout is longitude × latitude, not a force-directed scramble.</p>
+    <p class="source" id="source"></p>
+  </aside>
+  <main>
+    <svg id="map" viewBox="0 0 1100 720" role="img" aria-label="Map graph of Mexico"></svg>
+  </main>
+  <script>
+  async function main() {
+    const res = await fetch("mexico_cities_graph.json");
+    if (!res.ok) {
+      document.getElementById("detail").innerHTML =
+        "<h2>Error cargando datos</h2><p>No se pudo leer mexico_cities_graph.json. " +
+        "Si abriste este archivo con doble clic (file://), inicia un servidor local, por ejemplo:<br>" +
+        "<code>python -m http.server</code><br>y abre http://localhost:8000/mexico_map.html</p>";
+      throw new Error("fetch mexico_cities_graph.json failed: " + res.status);
+    }
+    const G = await res.json();
+    const svg = document.getElementById("map");
+    const NS = "http://www.w3.org/2000/svg";
+    const W = 1100, H = 720, PAD = 28;
+    const lons = G.outline.map(p => p[0]).concat(G.nodes.map(n => n.lon));
+    const lats = G.outline.map(p => p[1]).concat(G.nodes.map(n => n.lat));
+    const lon0 = Math.min(...lons), lon1 = Math.max(...lons);
+    const lat0 = Math.min(...lats), lat1 = Math.max(...lats);
+    const midLat = (lat0 + lat1) / 2 * Math.PI / 180;
+    const xSpan = (lon1 - lon0) * Math.cos(midLat);
+    const ySpan = (lat1 - lat0);
+    const scale = Math.min((W - 2 * PAD) / xSpan, (H - 2 * PAD) / ySpan);
+
+    function project(lon, lat) {
+      const x = PAD + (lon - lon0) * Math.cos(midLat) * scale;
+      const y = H - PAD - (lat - lat0) * scale;
+      return [x, y];
+    }
+
+    const pops = G.nodes.map(n => n.population);
+    const pmin = Math.log10(Math.max(1, Math.min(...pops)));
+    const pmax = Math.log10(Math.max(...pops));
+    function radius(pop) {
+      const t = (Math.log10(Math.max(pop, 1)) - pmin) / (pmax - pmin || 1);
+      return 1.6 + t * 7.4;
+    }
+
+    const world = document.createElementNS(NS, "g");
+    world.setAttribute("id", "world");
+    svg.appendChild(world);
+
+    const land = document.createElementNS(NS, "path");
+    land.setAttribute("d", G.outline.map((p, i) => {
+      const [x, y] = project(p[0], p[1]);
+      return (i ? "L" : "M") + x.toFixed(1) + " " + y.toFixed(1);
+    }).join(" ") + " Z");
+    land.setAttribute("fill", "#e7dccb");
+    land.setAttribute("stroke", "#5c5348");
+    land.setAttribute("stroke-width", "1.2");
+    world.appendChild(land);
+
+    const edgeLayer = document.createElementNS(NS, "g");
+    edgeLayer.setAttribute("stroke", "#8a7d6b");
+    edgeLayer.setAttribute("stroke-opacity", "0.45");
+    edgeLayer.setAttribute("fill", "none");
+    world.appendChild(edgeLayer);
+    const edgeEls = [];
+    for (const e of G.edges) {
+      const a = G.nodes[e.source], b = G.nodes[e.target];
+      const [x1, y1] = project(a.lon, a.lat);
+      const [x2, y2] = project(b.lon, b.lat);
+      const line = document.createElementNS(NS, "line");
+      line.setAttribute("x1", x1.toFixed(2));
+      line.setAttribute("y1", y1.toFixed(2));
+      line.setAttribute("x2", x2.toFixed(2));
+      line.setAttribute("y2", y2.toFixed(2));
+      line.setAttribute("stroke-width", e.kind === "mst" ? "0.7" : "0.95");
+      line.dataset.s = e.source;
+      line.dataset.t = e.target;
+      edgeLayer.appendChild(line);
+      edgeEls.push(line);
+    }
+
+    const nodeLayer = document.createElementNS(NS, "g");
+    world.appendChild(nodeLayer);
+    const nodeEls = G.nodes.map((n, i) => {
+      const [x, y] = project(n.lon, n.lat);
+      const c = document.createElementNS(NS, "circle");
+      c.setAttribute("cx", x.toFixed(2));
+      c.setAttribute("cy", y.toFixed(2));
+      c.setAttribute("r", radius(n.population).toFixed(2));
+      c.setAttribute("fill", "#9a3412");
+      c.setAttribute("fill-opacity", "0.88");
+      c.setAttribute("stroke", "#f4efe6");
+      c.setAttribute("stroke-width", "0.6");
+      c.dataset.i = i;
+      nodeLayer.appendChild(c);
+      return c;
+    });
+
+    const labelLayer = document.createElementNS(NS, "g");
+    const routeLabelLayer = document.createElementNS(NS, "g");
+    world.appendChild(routeLabelLayer);
+    const labeled = [...G.nodes].sort((a, b) => b.population - a.population).slice(0, 18);
+    const labelEls = labeled.map(n => {
+      const [x, y] = project(n.lon, n.lat);
+      const t = document.createElementNS(NS, "text");
+      t.setAttribute("class", "lbl");
+      t.setAttribute("x", (x + 6).toFixed(1));
+      t.setAttribute("y", (y - 6).toFixed(1));
+      t.textContent = n.name;
+      labelLayer.appendChild(t);
+      return t;
+    });
+
+    function fmt(n) { return n.toLocaleString("en-US"); }
+    document.getElementById("stats").innerHTML = [
+      ["Nodes", fmt(G.meta.nodes)],
+      ["Edges", fmt(G.meta.edges)],
+      ["Mean hop", G.meta.mean_edge_km + " km"],
+      ["MST bridges", fmt(G.meta.mst_bridge_edges)],
+    ].map(([k, v]) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`).join("");
+    document.getElementById("source").textContent =
+      G.meta.source + " · " + G.meta.construction;
+
+    const stateSel = document.getElementById("state");
+    [...new Set(G.nodes.map(n => n.state))].sort().forEach(s => {
+      const o = document.createElement("option");
+      o.value = s; o.textContent = s;
+      stateSel.appendChild(o);
+    });
+
+    const detail = document.getElementById("detail");
+    function show(n) {
+      if (!n) {
+        detail.innerHTML = "<h2>Hover a node</h2><p>Circle size is log population. Edges are 4-nearest neighbors plus a few MST bridges so remote towns stay connected.</p>";
+        return;
+      }
+      detail.innerHTML = `<h2>${n.name}</h2><p>${n.state}<br>Population ${fmt(n.population)} · degree ${n.degree}<br>${n.lat.toFixed(3)}°, ${n.lon.toFixed(3)}°</p>`;
+    }
+
+    let active = -1;
+    function highlight(i) {
+      active = i;
+      const neighbors = new Set();
+      edgeEls.forEach(el => {
+        const hit = i >= 0 && (el.dataset.s == i || el.dataset.t == i);
+        el.setAttribute("stroke", hit ? "#1f4d3a" : "#8a7d6b");
+        el.setAttribute("stroke-opacity", i < 0 ? "0.45" : (hit ? "0.95" : "0.08"));
+        el.setAttribute("stroke-width", hit ? "1.8" : "0.9");
+        if (hit) {
+          neighbors.add(+el.dataset.s);
+          neighbors.add(+el.dataset.t);
+        }
+      });
+      nodeEls.forEach((el, idx) => {
+        const on = i < 0 || idx === i || neighbors.has(idx);
+        el.setAttribute("fill", idx === i ? "#1f4d3a" : "#9a3412");
+        el.setAttribute("fill-opacity", on ? "0.95" : "0.12");
+      });
+      show(i >= 0 ? G.nodes[i] : null);
+    }
+
+    nodeEls.forEach((el, i) => {
+      el.addEventListener("mouseenter", () => highlight(i));
+      el.addEventListener("mouseleave", () => highlight(-1));
+      el.addEventListener("click", () => {
+        document.getElementById("q").value = G.nodes[i].name;
+      });
+    });
+
+    function applyFilter() {
+      const q = document.getElementById("q").value.trim().toLowerCase();
+      const st = stateSel.value;
+      let match = -1;
+      G.nodes.forEach((n, i) => {
+        const okState = !st || n.state === st;
+        const okQ = !q || n.name.toLowerCase().includes(q);
+        const vis = okState && okQ;
+        nodeEls[i].style.display = vis ? "" : "none";
+        if (vis && q && n.name.toLowerCase() === q) match = i;
+        else if (vis && q && match < 0 && n.name.toLowerCase().includes(q)) match = i;
+      });
+      edgeEls.forEach(el => {
+        const a = G.nodes[+el.dataset.s], b = G.nodes[+el.dataset.t];
+        const vis = (!st || (a.state === st && b.state === st)) &&
+          (!q || a.name.toLowerCase().includes(q) || b.name.toLowerCase().includes(q));
+        el.style.display = vis ? "" : "none";
+      });
+      if (q && match >= 0) highlight(match);
+      else if (!q) highlight(-1);
+    }
+    document.getElementById("q").addEventListener("input", applyFilter);
+    stateSel.addEventListener("change", applyFilter);
+    document.getElementById("labels").addEventListener("change", e => {
+      labelLayer.style.display = e.target.checked ? "" : "none";
+    });
+
+    let panX = 0, panY = 0, zoom = 1, dragging = false, lastX = 0, lastY = 0;
+    function applyView() {
+      world.setAttribute("transform", `translate(${panX} ${panY}) scale(${zoom})`);
+    }
+    svg.addEventListener("pointerdown", e => {
+      dragging = true; lastX = e.clientX; lastY = e.clientY;
+      svg.classList.add("dragging");
+      svg.setPointerCapture(e.pointerId);
+    });
+    svg.addEventListener("pointerup", () => { dragging = false; svg.classList.remove("dragging"); });
+    svg.addEventListener("pointermove", e => {
+      if (!dragging) return;
+      panX += e.clientX - lastX;
+      panY += e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      applyView();
+    });
+    svg.addEventListener("wheel", e => {
+      e.preventDefault();
+      const rect = svg.getBoundingClientRect();
+      const sx = (e.clientX - rect.left) / rect.width * W;
+      const sy = (e.clientY - rect.top) / rect.height * H;
+      const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+      const next = Math.min(8, Math.max(0.7, zoom * factor));
+      panX = sx - (sx - panX) * (next / zoom);
+      panY = sy - (sy - panY) * (next / zoom);
+      zoom = next;
+      applyView();
+    }, { passive: false });
+
+
+    function haversine(lat1, lon1, lat2, lon2) {
+      const R = 6371.0;
+      const phi1 = lat1 * Math.PI / 180, phi2 = lat2 * Math.PI / 180;
+      const dPhi = (lat2 - lat1) * Math.PI / 180;
+      const dLambda = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dPhi / 2) ** 2 +
+        Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda / 2) ** 2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    const adjacency = G.nodes.map(() => []);
+    for (const e of G.edges) {
+      adjacency[e.source].push([e.target, e.km]);
+      adjacency[e.target].push([e.source, e.km]);
+    }
+
+    class MinHeap {
+      constructor() { this.data = []; }
+      get size() { return this.data.length; }
+      push(item) {
+        const d = this.data;
+        d.push(item);
+        let i = d.length - 1;
+        while (i > 0) {
+          const p = (i - 1) >> 1;
+          if (d[p].f <= d[i].f) break;
+          [d[p], d[i]] = [d[i], d[p]];
+          i = p;
+        }
+      }
+      pop() {
+        const d = this.data;
+        const top = d[0];
+        const last = d.pop();
+        if (d.length) {
+          d[0] = last;
+          let i = 0;
+          for (;;) {
+            const l = 2 * i + 1, r = 2 * i + 2;
+            let smallest = i;
+            if (l < d.length && d[l].f < d[smallest].f) smallest = l;
+            if (r < d.length && d[r].f < d[smallest].f) smallest = r;
+            if (smallest === i) break;
+            [d[smallest], d[i]] = [d[i], d[smallest]];
+            i = smallest;
+          }
+        }
+        return top;
+      }
+    }
+
+    function astar(startId, goalId) {
+      const goalLat = G.nodes[goalId].lat, goalLon = G.nodes[goalId].lon;
+      const gScores = new Map([[startId, 0]]);
+      const frontier = new MinHeap();
+      const hStart = haversine(G.nodes[startId].lat, G.nodes[startId].lon, goalLat, goalLon);
+      frontier.push({ f: hStart, g: 0, node: startId, path: [startId] });
+
+      while (frontier.size) {
+        const { f, g, node: current, path } = frontier.pop();
+        if (current === goalId) return { cost: g, path };
+        if (g > (gScores.has(current) ? gScores.get(current) : Infinity)) continue;
+
+        for (const [neighbor, edgeCost] of adjacency[current]) {
+          const tentativeG = g + edgeCost;
+          if (tentativeG < (gScores.has(neighbor) ? gScores.get(neighbor) : Infinity)) {
+            gScores.set(neighbor, tentativeG);
+            const h = haversine(G.nodes[neighbor].lat, G.nodes[neighbor].lon, goalLat, goalLon);
+            frontier.push({ f: tentativeG + h, g: tentativeG, node: neighbor, path: [...path, neighbor] });
+          }
+        }
+      }
+      return { cost: Infinity, path: [] };
+    }
+
+    const nameCounts = new Map();
+    G.nodes.forEach(n => nameCounts.set(n.name, (nameCounts.get(n.name) || 0) + 1));
+    const sortedForSelect = [...G.nodes].sort((a, b) => a.name.localeCompare(b.name));
+    const originSel = document.getElementById("origin");
+    const destSel = document.getElementById("destination");
+    for (const sel of [originSel, destSel]) {
+      for (const n of sortedForSelect) {
+        const o = document.createElement("option");
+        o.value = n.id;
+        o.textContent = nameCounts.get(n.name) > 1 ? `${n.name} (${n.state})` : n.name;
+        sel.appendChild(o);
+      }
+    }
+
+    if (G.nodes.length > 1) {
+      originSel.value = "0";
+      destSel.value = "6";
+    }
+
+    let currentRoutePath = null;
+
+    function edgeKey(a, b) { return a < b ? `${a}-${b}` : `${b}-${a}`; }
+
+    function paintRoute(pathIds) {
+      const pathNodeSet = new Set(pathIds);
+      const pathEdgeSet = new Set();
+      for (let i = 0; i < pathIds.length - 1; i++) {
+        pathEdgeSet.add(edgeKey(pathIds[i], pathIds[i + 1]));
+      }
+      edgeEls.forEach(el => {
+        const s = +el.dataset.s, t = +el.dataset.t;
+        const onPath = pathEdgeSet.has(edgeKey(s, t));
+        el.setAttribute("stroke", onPath ? "#1f4d3a" : "#8a7d6b");
+        el.setAttribute("stroke-opacity", onPath ? "0.95" : "0.06");
+        el.setAttribute("stroke-width", onPath ? "2.4" : "0.7");
+      });
+      nodeEls.forEach((el, idx) => {
+        const onPath = pathNodeSet.has(idx);
+        el.setAttribute("fill", onPath ? "#1f4d3a" : "#9a3412");
+        el.setAttribute("fill-opacity", onPath ? "0.98" : "0.10");
+      });
+
+      routeLabelLayer.innerHTML = "";
+
+      const originNode = G.nodes[pathIds[0]];
+      const destNode = G.nodes[pathIds[pathIds.length - 1]];
+
+      for (const n of [originNode, destNode]) {
+        const [x, y] = project(n.lon, n.lat);
+        const t = document.createElementNS(NS, "text");
+        t.setAttribute("class", "lbl-route");
+        t.setAttribute("x", (x + 7).toFixed(1));
+        t.setAttribute("y", (y - 7).toFixed(1));
+        t.textContent = n.name;
+        routeLabelLayer.appendChild(t);
+      }
+    }
+
+    function clearRoute() {
+      currentRoutePath = null;
+      document.getElementById("clearRouteBtn").style.display = "none";
+      document.getElementById("routeResult").textContent = "";
+      document.getElementById("routeResult").classList.remove("error");
+      routeLabelLayer.innerHTML = ""; // <-- nueva línea
+      highlight(-1);
+    }
+
+    nodeEls.forEach((el, i) => {
+      el.addEventListener("mouseleave", () => {
+        if (currentRoutePath) paintRoute(currentRoutePath);
+      });
+    });
+
+    document.getElementById("findRouteBtn").addEventListener("click", () => {
+      const originId = parseInt(originSel.value, 10);
+      const destId = parseInt(destSel.value, 10);
+      const resultEl = document.getElementById("routeResult");
+      resultEl.classList.remove("error");
+      resultEl.innerHTML = "";
+
+      if (originId === destId) {
+        resultEl.classList.add("error");
+        resultEl.textContent = "Elige dos ciudades distintas.";
+        return;
+      }
+
+      const { cost, path } = astar(originId, destId);
+      if (!isFinite(cost) || path.length === 0) {
+        resultEl.classList.add("error");
+        resultEl.textContent = "No existe ruta entre esas dos ciudades en este grafo.";
+        currentRoutePath = null;
+        document.getElementById("clearRouteBtn").style.display = "none";
+        routeLabelLayer.innerHTML = "";
+        highlight(-1);
+        return;
+      }
+
+      currentRoutePath = path;
+      paintRoute(path);
+      document.getElementById("clearRouteBtn").style.display = "";
+
+      const names = path.map(id => `${G.nodes[id].name} (${G.nodes[id].state})`);
+      resultEl.innerHTML =
+        "Ruta:\n" + names.join(" -> ") +
+        `<span class="route-cost">${cost.toFixed(2)} km</span>`
+    });
+
+    document.getElementById("clearRouteBtn").addEventListener("click", clearRoute);
+  }
+  main();
+  </script>
+</body>
+</html>
