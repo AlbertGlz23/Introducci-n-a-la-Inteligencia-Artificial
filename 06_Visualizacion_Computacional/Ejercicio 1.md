@@ -38,4 +38,4 @@ Sobre si la predicción de la celda de línea de comandos (`!yolo predict`) coin
 
 ## Sección 4: Notebook en PDF
 
-![](./documentos/Notebook_visualización.pdf)
+![](./documentos/Notebook_visualizacion.pdf)
