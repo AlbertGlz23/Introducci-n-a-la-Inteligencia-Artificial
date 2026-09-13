@@ -26,25 +26,41 @@ Ruta óptima entre **Lugoj** (Origen) y **Hirsova** (Destino). Cada nodo muestra
 
 ```mermaid
 graph LR
-    Lugoj(("Lugoj\n(h=244)\n[Origen]")) -->|111| Timisoara(("Timisoara\n(h=329)"))
-    Lugoj -->|70| Mehadia(("Mehadia\n(h=241)"))
-    Mehadia -->|75| Drobeta(("Drobeta\n(h=242)"))
-    Drobeta -->|120| Craiova(("Craiova\n(h=160)"))
-    Craiova -->|138| Pitesti(("Pitesti\n(h=100)"))
-    Pitesti -->|101| Bucharest(("Bucharest\n(h=85)"))
-    Bucharest -->|85| Urziceni(("Urziceni\n(h=98)"))
+    Lugoj(("Lugoj\n(h=370)\n[Origen]"))
+
+    Lugoj -->|111| Timisoara(("Timisoara\n(h=444)"))
+    Timisoara -->|118| Arad(("Arad\n(h=465)"))
+    Arad -->|75| Zerind(("Zerind\n(h=463)"))
+    Zerind -->|71| Oradea(("Oradea\n(h=460)"))
+    Oradea -->|151| Sibiu(("Sibiu\n(h=344)"))
+    Sibiu -->|99| Fagaras(("Fagaras\n(h=249)"))
+    Fagaras -->|211| Bucharest(("Bucharest\n(h=136)"))
+
+    Lugoj -->|70| Mehadia(("Mehadia\n(h=366)"))
+    Mehadia -->|75| Drobeta(("Drobeta\n(h=373)"))
+    Drobeta -->|120| Craiova(("Craiova\n(h=288)"))
+    Craiova -->|138| Pitesti(("Pitesti\n(h=215)"))
+    Pitesti -->|101| Bucharest
+
+    Bucharest -->|85| Urziceni(("Urziceni\n(h=78)"))
     Urziceni -->|98| Hirsova(("Hirsova\n(h=0)\n[Destino]"))
 
     style Lugoj fill:#1f6feb,stroke:#388bfd,color:#fff
     style Hirsova fill:#238636,stroke:#2ea043,color:#fff
+    style Timisoara fill:#30363d,stroke:#8b949e,color:#c9d1d9
+    style Arad fill:#30363d,stroke:#8b949e,color:#c9d1d9
+    style Zerind fill:#30363d,stroke:#8b949e,color:#c9d1d9
+    style Oradea fill:#30363d,stroke:#8b949e,color:#c9d1d9
+    style Sibiu fill:#30363d,stroke:#8b949e,color:#c9d1d9
+    style Fagaras fill:#30363d,stroke:#8b949e,color:#c9d1d9
     style Mehadia fill:#4a5568,stroke:#2d3748,color:#fff
     style Drobeta fill:#4a5568,stroke:#2d3748,color:#fff
     style Craiova fill:#4a5568,stroke:#2d3748,color:#fff
     style Pitesti fill:#4a5568,stroke:#2d3748,color:#fff
     style Bucharest fill:#4a5568,stroke:#2d3748,color:#fff
     style Urziceni fill:#4a5568,stroke:#2d3748,color:#fff
-    style Timisoara fill:#4a5568,stroke:#2d3748,color:#fff
 ```
+
 ## Sección II. Resultados y Análisis de Algoritmos
 
 A continuación se presenta la tabla comparativa con los resultados obtenidos al ejecutar los algoritmos de búsqueda informada para el problema **Lugoj → Hirsova**:
@@ -56,9 +72,9 @@ A continuación se presenta la tabla comparativa con los resultados obtenidos al
 
 ## Sección III. Reporte de Resultados y Análisis
 
-Durante la ejecución de las pruebas, **A\*** logró identificar con éxito el trayecto más corto en distancia real entre Lugoj y Hirsova, sumando un total de **687 km** a lo largo de 7 tramos de carretera. Al basar su estimación en la distancia en línea recta (una heurística claramente admisible al no sobreestimar jamás la trayectoria real), el algoritmo asegura una ruta óptima. Esto lo consigue equilibrando en todo momento el tramo que ya se ha recorrido ($g(n)$) con la distancia que proyecta hacia el destino ($h(n)$) a través de su función de evaluación $f(n) = g(n) + h(n)$.
+Durante la ejecución de las pruebas, **A\*** logró identificar con éxito el trayecto más corto en distancia real entre Lugoj y Hirsova, sumando un total de **687 km** a lo largo de 7 tramos de carretera. Al basar su estimación en la distancia en línea recta (una heurística claramente admisible al no sobreestimar jamás la trayectoria real), el algoritmo asegura una ruta óptima. Esto lo consigue equilibrando en todo momento el tramo que ya se ha recorrido (*g(n)*) con la distancia que proyecta hacia el destino (*h(n)*) a través de su función de evaluación *f(n) = g(n) + h(n)*.
 
-En este caso particular, **Greedy Best-First Search** llegó exactamente al mismo resultado de 687 km, sin mostrar desviaciones con respecto a la ruta de A\*. No obstante, el hecho de que hayan coincidido en esta red de caminos no implica que Greedy ofrezca siempre la solución más barata. Incluso trabajando con una heurística admisible, Greedy puede terminar seleccionando una ruta más costosa debido a que guía sus decisiones tomando únicamente $f(n) = h(n)$. Como no guarda un registro de la distancia acumulada en el camino ($g(n)$), actúa con una visión un tanto miope: en cada intersección simplemente escoge a la ciudad vecina que aparente estar más próxima a la meta en el mapa, pasando por alto si el trayecto para llegar hasta ella implicó un desvío o un costo desproporcionado.
+En este caso particular, **Greedy Best-First Search** llegó exactamente al mismo resultado de 687 km, sin mostrar desviaciones con respecto a la ruta de A\*. No obstante, el hecho de que hayan coincidido en esta red de caminos no implica que Greedy ofrezca siempre la solución más barata. Incluso trabajando con una heurística admisible, Greedy puede terminar seleccionando una ruta más costosa debido a que guía sus decisiones tomando únicamente *f(n) = h(n)*. Como no guarda un registro de la distancia acumulada en el camino (*g(n)*), actúa con una visión un tanto miope: en cada intersección simplemente escoge a la ciudad vecina que aparente estar más próxima a la meta en el mapa, pasando por alto si el trayecto para llegar hasta ella implicó un desvío o un costo desproporcionado.
 
 Por último, al observar el avance de A\* a lo largo del trayecto, se aprecia que el valor de la función de evaluación $f(n)$ es **monótonamente no decreciente**; es decir, la suma estimada se mantiene constante o va en aumento a medida que nos adentramos en los nodos de la ruta. Este comportamiento es una consecuencia directa de contar con una heurística **consistente**, la cual respeta la regla del triángulo: $h(n) \le c(n, a, n') + h(n')$. Al utilizar la tabla de distancias directas de AIMA hacia un destino como Hirsova, el valor de la heurística nunca cae de golpe tan rápido como para superar el costo real del tramo que se acaba de avanzar ($c(n, a, n')$). Esto permite que A\* vaya explorando la frontera de ciudades en capas progresivas de costo ascendente, evitando que deba reevaluar trayectos recorridos previamente y asegurando la ruta óptima a la primera.
 
