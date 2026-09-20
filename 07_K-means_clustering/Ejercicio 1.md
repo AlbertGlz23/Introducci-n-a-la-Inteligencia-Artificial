@@ -13,11 +13,11 @@
 
 | Categoría / Gráfico | Centroides originales | Centroides separados (nuevos) |
 | :--- | :---: | :---: |
-| **Plano con los centros** | `![Plano Original](assets/Centroides_og.png)` | `![Plano Nuevos](assets/Centroides_new.png)` |
-| **Diagrama de dispersión** | `![Dispersión Original](assets/scatter_og.png)` | `![Dispersión Nuevos](assets/scatter_new.png)` |
-| **Diagrama de Voronoi (K=5)** | `![Voronoi Original](assets/voronoi_og.png)` | `![Voronoi Nuevos](assets/voronoi_new.png)` |
-| **Diagrama de inercia (Codo)** | `![Inercia Original](assets/inertia_og.png)` | `![Inercia Nuevos](assets/inertia_new.png)` |
-| **Diagrama de silueta** | `![Silueta Original](assets/silhouette_og.png)` | `![Silueta Nuevos](assets/silhouette_new.png)` |
+| **Plano con los centros** | ![Plano Original](assets/Centroides_og.png) | ![Plano Nuevos](assets/Centroides_new.png) |
+| **Diagrama de dispersión** | ![Dispersión Original](assets/scatter_og.png) | ![Dispersión Nuevos](assets/scatter_new.png) |
+| **Diagrama de Voronoi (K=5)** | ![Voronoi Original](assets/voronoi_og.png) | ![Voronoi Nuevos](assets/voronoi_new.png) |
+| **Diagrama de inercia (Codo)** | ![Inercia Original](assets/inertia_og.png) | ![Inercia Nuevos](assets/inertia_new.png) |
+| **Diagrama de silueta** | ![Silueta Original](assets/silhouette_og.png) | ![Silueta Nuevos](assets/silhouette_new.png) |
 
 ---
 
@@ -56,4 +56,4 @@ Como la gráfica del codo continúa señalando $k = 4$, el factor decisivo a cam
 
 ## Sección V: Evidencias de ejecución
 
-`![Evidencias de ejecución de la notebook](assets/exec_evidences.png)` 
+![Evidencias de ejecución de la notebook](assets/exec_evidences.png)
