@@ -12,7 +12,7 @@ ARTICULOS = {
 
 URL = "https://es.wikipedia.org/w/api.php"
 HEADERS = {
-    "User-Agent": "ProyectoRAGUniversidad/1.0 (aagl2306@gmail.com) httpx"
+    "User-Agent": "ProyectoRAGUniversidad/1.0 (Tucorreo@ejemplo.com) httpx"
 }
 
 carpeta = Path(__file__).resolve().parent / "data"
